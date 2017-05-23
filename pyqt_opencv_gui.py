@@ -1,21 +1,74 @@
 import sys
 import numpy as np
 import cv2
-from PyQt5.QtCore import Qt, QPoint, QSize
-from PyQt5.QtGui import QPixmap, QIcon, QImage, QPainter
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import (QWidget, QLabel, QHBoxLayout, QVBoxLayout,
                              QApplication, QPushButton, QSlider,
-                             QFileDialog, QAction)
+                             QFileDialog)
 
 
-class Example(QWidget):
+class Filter(QWidget):
+    """Common base class for all filters"""
+
+    defaultK = 3
+    filterCount = 0
 
     def __init__(self):
-        super(Example, self).__init__()
+
+        super(Filter, self).__init__()
+
+        # Variable for the constant of the OpenCV filter
+        self.k = 3
+
+        # Label for the slider
+        self.k_lbl = QLabel(str(self.k))
+
+        # Increase the number of filters created
+        Filter.filterCount +=1
+
+        # Slider for the first OpenCV filter, with min, max, default and step values
+        self.thresh_sld = QSlider(Qt.Horizontal, self)
+        self.thresh_sld.setFocusPolicy(Qt.NoFocus)
+        self.thresh_sld.setMinimum(3)
+        self.thresh_sld.setMaximum(51)
+        self.thresh_sld.setValue(self.k)
+        self.thresh_sld.setSingleStep(2)
+        # Function sending the slider signal to the processing function
+        self.thresh_sld.valueChanged[int].connect(self.changeValue)
+
+    def addToLayout(self):
+        # Adds the slider and its label to the bottom of the main layout
+        v_main_lay.addWidget(self.k_lbl)
+        v_main_lay.addWidget(self.thresh_sld)
+
+    def changeValue(self, value):
+        # Function for setting the value of k1
+
+        if value % 2 == 1:
+            self.k = value1
+        else:
+            self.k = value1 + 1
+
+        self.thresh_sld.setValue(self.k)
+        self.k_lbl.setText(str(self.k))
+        Example.process_image()
+
+    def resetValue(self):
+
+        self.changeValue(self.defaultK)
+
+class MainWindow(QWidget):
+
+    def __init__(self):
+        super(MainWindow, self).__init__()
 
         self.initUI()
 
     def initUI(self):
+
+        filter1 = Filter()
+        filter2 = Filter()
 
         # Variable for the path of the image
         self.path = None
@@ -294,5 +347,5 @@ class Example(QWidget):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ex = Example()
+    window = MainWindow()
     sys.exit(app.exec_())
