@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 import cv2
+import os
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import (QWidget, QLabel, QHBoxLayout, QVBoxLayout,
@@ -10,33 +11,46 @@ from PyQt5.QtWidgets import (QWidget, QLabel, QHBoxLayout, QVBoxLayout,
 class Image(QWidget):
     """Common base for the images"""
 
-    path = None
-
     def __init__(self, name):
         super(Image, self).__init__()
-        self.v_lay = QVBoxLayout()
-        self.h_lay = QHBoxLayout()
+
+        self.setMinimumSize(500,500)
 
         # Label for the image
         self.name_lbl = QLabel(name)
 
         # Label (frame) where the original image will be located, with true scaling and maximum size
         self.frame_lbl = QLabel(self)
+        self.frame_lbl.setMinimumSize(700,700)
         self.frame_lbl.setScaledContents(True)
         self.frame_lbl.setMaximumSize(700, 700)
 
+        self.setBackground()
         self.addToLayout()
 
     def addToLayout(self):
+        self.v_lay = QVBoxLayout()
+        self.h_lay = QHBoxLayout()
 
         self.v_lay.addWidget(self.name_lbl)
-        self.v_lay.addStretch(1)
         self.v_lay.addWidget(self.frame_lbl)
-        self.v_lay.addStretch(1)
 
         self.h_lay.addStretch(1)
         self.h_lay.addLayout(self.v_lay)
         self.h_lay.addStretch(1)
+
+    def setBackground(self):
+        self.script_path = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
+        MainWindow.path = os.path.dirname(self.script_path) + 'default_BG.jpg'
+
+        cv_img_bgr = cv2.imread(MainWindow.path)
+        cv_img_rgb = cv2.cvtColor(cv_img_bgr, cv2.COLOR_BGR2RGB)
+
+        height, width, channel = cv_img_rgb.shape
+        bytesPerLine = 3 * width
+        img_rgb = QImage(cv_img_rgb.data, width, height, bytesPerLine, QImage.Format_RGB888)
+
+        self.frame_lbl.setPixmap(QPixmap.fromImage(img_rgb))
 
 class Filter(QWidget):
     """Common base class for all filters"""
@@ -46,11 +60,13 @@ class Filter(QWidget):
     def __init__(self):
         super(Filter, self).__init__()
 
+        self.setMaximumHeight(65)
+
         # Increase the number of filters created
         Filter.filterCount += 1
 
         # Variable for the slider/label layout
-        self.lay = QVBoxLayout(self)
+        self.lay = QHBoxLayout(self)
 
         # Variable for the constant of the OpenCV filter
         self.k = self.defaultK
@@ -64,6 +80,9 @@ class Filter(QWidget):
         # Adds the slider and it's label to the layout
         self.addToLayout()
 
+        # Function sending the slider signal to the processing function
+        self.thresh_sld.valueChanged.connect(self.changeValue)
+
     def setParameters(self, min, max, step):
         # Creates the slider for the OpenCV filter, with min, max, default and step values
         self.thresh_sld = QSlider(Qt.Horizontal, self)
@@ -72,11 +91,10 @@ class Filter(QWidget):
         self.thresh_sld.setMaximum(max)
         self.thresh_sld.setValue(self.k)
         self.thresh_sld.setSingleStep(step)
-        # Function sending the slider signal to the processing function
-        self.thresh_sld.valueChanged.connect(self.changeValue)
 
     def addToLayout(self):
         # Adds the slider and its label to the bottom of the main layout
+
         self.lay.addWidget(self.k_lbl)
         self.lay.addWidget(self.thresh_sld)
 
@@ -90,6 +108,7 @@ class Filter(QWidget):
 
         self.thresh_sld.setValue(self.k)
         self.k_lbl.setText(str(self.k))
+        MainWindow.process_image()
 
     def resetValue(self):
         # Resets the K value to it's default
@@ -112,34 +131,32 @@ class MainWindow(QWidget):
         self.original_image = Image('Original')
         self.processed_image = Image('Processed')
 
-        self.createButtons()
-
         # Horizontal layout for the two images
         self.h_img_lay = QHBoxLayout()
         self.h_img_lay.addWidget(self.original_image)
         self.h_img_lay.addWidget(self.processed_image)
 
+
+        self.createButtons()
+
         # Creates the main layout (vertical)
         self.v_main_lay = QVBoxLayout()
         # Adds the images horizontal layout to the main layout
         self.v_main_lay.addLayout(self.h_img_lay)
-
         # Adds the sliders and their labels to the bottom of the main layout
         self.v_main_lay.addWidget(self.filter1)
         self.v_main_lay.addWidget(self.filter2)
         self.v_main_lay.addWidget(self.filter3)
         self.v_main_lay.addWidget(self.filter4)
-
         # Adds the buttons horizontal layout to the bottom of the main layout
         self.v_main_lay.addLayout(self.h_btn_lay)
-
         # Sets the main layout
         self.setLayout(self.v_main_lay)
 
         # Sets the geometry, position, window title and window default mode
-        self.setGeometry(300, 300, 350, 300)
-        self.setWindowTitle('Review')
-        self.showMaximized()
+        self.setGeometry(500, 150, 0, 0)
+        self.setWindowTitle('Image processing')
+        self.show()
 
     def createButtons(self):
         # Button for selecting image
