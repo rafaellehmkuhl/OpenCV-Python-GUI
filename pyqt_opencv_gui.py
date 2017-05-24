@@ -109,86 +109,53 @@ class MainWindow(QWidget):
         self.filter3 = Filter()
         self.filter4 = Filter()
 
-        # Variable for the path of the image
-        self.path = None
-
-
-
         self.original_image = Image('Original')
         self.processed_image = Image('Processed')
 
-        # Labels for the images
-        original_img_label = QLabel('Original')
-        processed_img_label = QLabel('Processed')
-
-        # Label (frame) where the original image will be located, with true scaling and maximum size
-        self.orig_lbl = QLabel(self)
-        self.orig_lbl.setScaledContents(True)
-        self.orig_lbl.setMaximumSize(700,700)
-
-        # Label (frame) where the processed image will be located, with true scaling and maximum size
-        self.proc_lbl = QLabel(self)
-        self.proc_lbl.setScaledContents(True)
-        self.proc_lbl.setMaximumSize(700,700)
-
-        # Button for selecting image
-        select_image_btn = QPushButton('Select image')
-        select_image_btn.clicked.connect(self.get_image)
-
-        # Button for cleaning image
-        clean_image_btn = QPushButton('Save image')
-        clean_image_btn.clicked.connect(self.save_image)
-
-        # Vertical layout for the original image and label
-        v_orig_lay = QVBoxLayout()
-        v_orig_lay.addWidget(original_img_label)
-        v_orig_lay.addStretch(1)
-        v_orig_lay.addWidget(self.orig_lbl)
-        v_orig_lay.addStretch(1)
-
-        # Vertical layout for the processed image and label
-        v_proc_lay = QVBoxLayout()
-        v_proc_lay.addWidget(processed_img_label)
-        v_proc_lay.addStretch(1)
-        v_proc_lay.addWidget(self.proc_lbl)
-        v_proc_lay.addStretch(1)
+        self.createButtons()
 
         # Horizontal layout for the two images
-        h_img_lay = QHBoxLayout()
-        h_img_lay.addStretch(1)
-        h_img_lay.addLayout(v_orig_lay)
-        h_img_lay.addStretch(1)
-        h_img_lay.addLayout(v_proc_lay)
-        h_img_lay.addStretch(1)
-
-        # Horizontal layout for the buttons
-        h_btn_lay = QHBoxLayout()
-        h_btn_lay.addStretch(1)
-        h_btn_lay.addWidget(select_image_btn)
-        h_btn_lay.addWidget(clean_image_btn)
-        h_btn_lay.addStretch(1)
+        self.h_img_lay = QHBoxLayout()
+        self.h_img_lay.addWidget(self.original_image)
+        self.h_img_lay.addWidget(self.processed_image)
 
         # Creates the main layout (vertical)
-        v_main_lay = QVBoxLayout()
+        self.v_main_lay = QVBoxLayout()
         # Adds the images horizontal layout to the main layout
-        v_main_lay.addLayout(h_img_lay)
+        self.v_main_lay.addLayout(self.h_img_lay)
 
         # Adds the sliders and their labels to the bottom of the main layout
-        v_main_lay.addWidget(self.filter1)
-        v_main_lay.addWidget(self.filter2)
-        v_main_lay.addWidget(self.filter3)
-        v_main_lay.addWidget(self.filter4)
+        self.v_main_lay.addWidget(self.filter1)
+        self.v_main_lay.addWidget(self.filter2)
+        self.v_main_lay.addWidget(self.filter3)
+        self.v_main_lay.addWidget(self.filter4)
 
         # Adds the buttons horizontal layout to the bottom of the main layout
-        v_main_lay.addLayout(h_btn_lay)
+        self.v_main_lay.addLayout(self.h_btn_lay)
 
         # Sets the main layout
-        self.setLayout(v_main_lay)
+        self.setLayout(self.v_main_lay)
 
         # Sets the geometry, position, window title and window default mode
         self.setGeometry(300, 300, 350, 300)
         self.setWindowTitle('Review')
         self.showMaximized()
+
+    def createButtons(self):
+        # Button for selecting image
+        self.select_image_btn = QPushButton('Select image')
+        self.select_image_btn.clicked.connect(self.get_image)
+
+        # Button for cleaning image
+        self.clean_image_btn = QPushButton('Save image')
+        self.clean_image_btn.clicked.connect(self.save_image)
+
+        # Horizontal layout for the buttons
+        self.h_btn_lay = QHBoxLayout()
+        self.h_btn_lay.addStretch(1)
+        self.h_btn_lay.addWidget(self.select_image_btn)
+        self.h_btn_lay.addWidget(self.clean_image_btn)
+        self.h_btn_lay.addStretch(1)
 
     def get_image(self):
         # Function for selecting the original image
@@ -204,7 +171,7 @@ class MainWindow(QWidget):
         bytesPerLine = 3 * width
         img_rgb = QImage(cv_img_rgb.data, width, height, bytesPerLine, QImage.Format_RGB888)
 
-        self.orig_lbl.setPixmap(QPixmap.fromImage(img_rgb))
+        self.original_image.frame_lbl.setPixmap(QPixmap.fromImage(img_rgb))
         self.process_image()
 
     def save_image(self):
@@ -264,7 +231,7 @@ class MainWindow(QWidget):
         self.final_qt_img = QImage(self.final_cv_img.data, width, height, bytesPerLine, QImage.Format_RGB888)
 
         # Updates the processed image frame
-        self.proc_lbl.setPixmap(QPixmap.fromImage(self.final_qt_img))
+        self.processed_image.frame_lbl.setPixmap(QPixmap.fromImage(self.final_qt_img))
 
 
         # Update original image with the contours
@@ -280,7 +247,7 @@ class MainWindow(QWidget):
         bytesPerLine = 3 * width
         qt_img_rgb = QImage(self.cv_img_rgb.data, width, height, bytesPerLine, QImage.Format_RGB888)
 
-        self.orig_lbl.setPixmap(QPixmap.fromImage(qt_img_rgb))
+        self.original_image.frame_lbl.setPixmap(QPixmap.fromImage(qt_img_rgb))
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
