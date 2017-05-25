@@ -57,8 +57,8 @@ class Filter(QWidget):
     defaultK = 3
     filterCount = 0
 
-    def __init__(self):
-        super(Filter, self).__init__()
+    def __init__(self, parent=None):
+        super(Filter, self).__init__(parent=parent)
 
         self.setMaximumHeight(65)
 
@@ -108,7 +108,7 @@ class Filter(QWidget):
 
         self.thresh_sld.setValue(self.k)
         self.k_lbl.setText(str(self.k))
-        MainWindow.process_image()
+        self.parent().process_image()
 
     def resetValue(self):
         # Resets the K value to it's default
