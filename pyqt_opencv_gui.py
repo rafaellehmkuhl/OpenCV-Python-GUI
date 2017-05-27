@@ -6,7 +6,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import (QWidget, QLabel, QHBoxLayout, QVBoxLayout,
                              QApplication, QPushButton, QSlider,
-                             QFileDialog)
+                             QFileDialog, QComboBox)
 
 class Image(QWidget):
     """Common base for the images"""
@@ -54,6 +54,8 @@ class Filter(QWidget):
 
         self.k = init
 
+        self.name = name
+
         # Increase the number of filters created
         Filter.filterCount += 1
 
@@ -67,7 +69,7 @@ class Filter(QWidget):
         self.k_lbl = QLabel(str(self.k))
 
         # Name for the slider
-        self.name_lbl = QLabel(name)
+        self.name_lbl = QLabel(self.name + ': ')
 
         # Set default parameters
         self.setParameters(minValue, maxValue)
@@ -133,7 +135,7 @@ class MainWindow(QWidget):
 
     def createNewFilter(self):
 
-        self.filters[self.filter_count] = Filter('Filtro' + str(self.filter_count) + ': ', 3, 51, 3)
+        self.filters[self.filter_count] = Filter(self.filter_select.currentText(), 3, 51, 3)
         self.v_filters_lay.addWidget(self.filters[self.filter_count])
         self.filter_count += 1
 
@@ -179,6 +181,10 @@ class MainWindow(QWidget):
 
     def createButtons(self):
 
+        # ComboBox for filter selection
+        self.filter_select = QComboBox()
+        self.filter_select.addItems(['Threshold', 'Erosion', 'Dilation'])
+
         # Button for adding filters
         self.add_filter_btn = QPushButton('Add filter')
         self.add_filter_btn.clicked.connect(self.createNewFilter)
@@ -198,6 +204,7 @@ class MainWindow(QWidget):
         # Horizontal layout for the buttons
         self.h_btn_lay = QHBoxLayout()
         self.h_btn_lay.addStretch(1)
+        self.h_btn_lay.addWidget(self.filter_select)
         self.h_btn_lay.addWidget(self.add_filter_btn)
         self.h_btn_lay.addWidget(self.delete_filter_btn)
         self.h_btn_lay.addWidget(self.select_image_btn)
@@ -251,9 +258,17 @@ class MainWindow(QWidget):
 
                 #Apply filters
                 k = self.filters[i].k
+                name = self.filters[i].name
                 kernel = np.ones((k, k), np.uint8)
-                cv_after = cv2.erode(cv_before, kernel, iterations = 1)
-                #ret, cv_after = cv2.threshold(cv_before, 127, 255, cv2.THRESH_BINARY)
+
+                if(name == 'Threshold'):
+                    ret, cv_after = cv2.threshold(cv_before, k, 255, cv2.THRESH_BINARY)
+                if(name == 'Erosion'):
+                    cv_after = cv2.erode(cv_before, kernel, iterations = 1)
+                if(name == 'Dilation'):
+                    cv_after = cv2.dilate(cv_before, kernel, iterations = 1)
+
+
                 cv_before = cv_after
         else:
             cv_after = cv_before
