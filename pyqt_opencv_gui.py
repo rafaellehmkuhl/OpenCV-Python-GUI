@@ -32,6 +32,16 @@ class Image(QWidget):
         self.v_lay.addWidget(self.name_lbl)
         self.v_lay.addWidget(self.frame_lbl)
 
+    def updateImage(self, opencv_rgb_image):
+
+        self.cv_img_rgb = opencv_rgb_image
+
+        height, width, channel = self.cv_img_rgb.shape
+        bytesPerLine = 3 * width
+        self.q_image = QImage(self.cv_img_rgb.data, width, height, bytesPerLine, QImage.Format_RGB888)
+
+        self.frame_lbl.setPixmap(QPixmap.fromImage(self.q_image))
+
 class Filter(QWidget):
     """Common base class for all filters"""
     defaultK = 3
@@ -118,6 +128,11 @@ class MainWindow(QWidget):
         self.processed_image = Image('Processed')
         self.setBackground()
 
+        self.createImagesLayout()
+        self.createButtons()
+        self.createMainLayout()
+
+    def createImagesLayout(self):
         # Horizontal layout for the two images
         self.h_img_lay = QHBoxLayout()
         self.h_img_lay.addStretch()
@@ -125,8 +140,8 @@ class MainWindow(QWidget):
         self.h_img_lay.addWidget(self.processed_image)
         self.h_img_lay.addStretch()
 
-        self.createButtons()
 
+    def createMainLayout(self):
         # Creates the main layout (vertical)
         self.v_main_lay = QVBoxLayout()
         # Adds the images horizontal layout to the main layout
@@ -172,11 +187,7 @@ class MainWindow(QWidget):
         cv_img_bgr = cv2.imread(self.path)
         cv_img_rgb = cv2.cvtColor(cv_img_bgr, cv2.COLOR_BGR2RGB)
 
-        height, width, channel = cv_img_rgb.shape
-        bytesPerLine = 3 * width
-        img_rgb = QImage(cv_img_rgb.data, width, height, bytesPerLine, QImage.Format_RGB888)
-
-        self.original_image.frame_lbl.setPixmap(QPixmap.fromImage(img_rgb))
+        self.original_image.updateImage(cv_img_rgb)
         self.process_image()
 
     def save_image(self):
@@ -230,13 +241,8 @@ class MainWindow(QWidget):
         # Convert image to RGB
         self.final_cv_img = cv2.cvtColor(cv_img_eros, cv2.COLOR_GRAY2RGB)
 
-        # Convert image to QImage
-        height, width, channel = self.final_cv_img.shape
-        bytesPerLine = 3 * width
-        self.final_qt_img = QImage(self.final_cv_img.data, width, height, bytesPerLine, QImage.Format_RGB888)
-
         # Updates the processed image frame
-        self.processed_image.frame_lbl.setPixmap(QPixmap.fromImage(self.final_qt_img))
+        self.processed_image.updateImage(self.final_cv_img)
 
 
         # Update original image with the contours
@@ -248,11 +254,7 @@ class MainWindow(QWidget):
         # Apply contours
         cv2.drawContours(self.cv_img_rgb, contours, -1, (0, 0, 255), 1)
 
-        height, width, channel = self.cv_img_rgb.shape
-        bytesPerLine = 3 * width
-        qt_img_rgb = QImage(self.cv_img_rgb.data, width, height, bytesPerLine, QImage.Format_RGB888)
-
-        self.original_image.frame_lbl.setPixmap(QPixmap.fromImage(qt_img_rgb))
+        self.original_image.updateImage(self.cv_img_rgb)
 
     def setBackground(self):
         self.script_path = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
@@ -261,12 +263,8 @@ class MainWindow(QWidget):
         self.cv_img_bgr = cv2.imread(self.path)
         self.cv_img_rgb = cv2.cvtColor(self.cv_img_bgr, cv2.COLOR_BGR2RGB)
 
-        height, width, channel = self.cv_img_rgb.shape
-        bytesPerLine = 3 * width
-        self.img_rgb = QImage(self.cv_img_rgb.data, width, height, bytesPerLine, QImage.Format_RGB888)
-
-        self.original_image.frame_lbl.setPixmap(QPixmap.fromImage(self.img_rgb))
-        self.processed_image.frame_lbl.setPixmap(QPixmap.fromImage(self.img_rgb))
+        self.original_image.updateImage(self.cv_img_rgb)
+        self.processed_image.updateImage(self.cv_img_rgb)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
