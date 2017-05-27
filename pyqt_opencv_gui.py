@@ -73,7 +73,7 @@ class Filter(QWidget):
         self.setParameters(minValue, maxValue)
 
         # Adds the slider and it's label to the layout
-        self.addToLayout()
+        self.createLayout()
 
         # Function sending the slider signal to the processing function
         self.thresh_sld.valueChanged.connect(self.changeValue)
@@ -87,7 +87,7 @@ class Filter(QWidget):
         self.thresh_sld.setValue(self.k)
         self.thresh_sld.setSingleStep(2)
 
-    def addToLayout(self):
+    def createLayout(self):
         # Adds the slider and its label to the bottom of the main layout
 
         self.lay.addWidget(self.name_lbl)
@@ -164,11 +164,11 @@ class MainWindow(QWidget):
     def createButtons(self):
         # Button for selecting image
         self.select_image_btn = QPushButton('Select image')
-        self.select_image_btn.clicked.connect(self.get_image)
+        self.select_image_btn.clicked.connect(self.openImage)
 
         # Button for cleaning image
         self.clean_image_btn = QPushButton('Save image')
-        self.clean_image_btn.clicked.connect(self.save_image)
+        self.clean_image_btn.clicked.connect(self.saveImages)
 
         # Horizontal layout for the buttons
         self.h_btn_lay = QHBoxLayout()
@@ -177,7 +177,7 @@ class MainWindow(QWidget):
         self.h_btn_lay.addWidget(self.clean_image_btn)
         self.h_btn_lay.addStretch(1)
 
-    def get_image(self):
+    def openImage(self):
         # Function for selecting the original image
 
         filter = "Images (*.png *.jpg)"
@@ -190,17 +190,18 @@ class MainWindow(QWidget):
         self.original_image.updateImage(cv_img_rgb)
         self.updateImages()
 
-    def save_image(self):
+    def saveImages(self):
         # Function for saving the processed image
 
         filter = "Images (*.png *.jpg)"
 
         image_path_orig, _ = QFileDialog.getSaveFileName(self, filter=filter)
-        self.cv_img_cont_bgr = cv2.cvtColor(self.cv_img_rgb, cv2.COLOR_RGB2BGR)
-        cv2.imwrite(image_path_orig, self.cv_img_cont_bgr)
+        self.cv_img_processed_bgr = cv2.cvtColor(self.cv_img_processed_rgb, cv2.COLOR_RGB2BGR)
+        cv2.imwrite(image_path_orig, self.cv_img_processed_bgr)
 
         image_path_proc, _ = QFileDialog.getSaveFileName(self, filter=filter)
-        cv2.imwrite(image_path_proc, self.final_cv_img)
+        self.orig_img_calculated_bgr = cv2.cvtColor(self.orig_img_calculated_rgb, cv2.COLOR_RGB2BGR)
+        cv2.imwrite(image_path_proc, self.orig_img_calculated_bgr)
 
     def updateImages(self):
         self.processImage()
@@ -211,6 +212,7 @@ class MainWindow(QWidget):
 
         # Open the image
         self.cv_img_bgr = cv2.imread(self.path)
+        self.cv_img_rgb = cv2.cvtColor(self.cv_img_bgr, cv2.COLOR_BGR2RGB)
 
         # Convert image to HSV
         cv_img_hsv = cv2.cvtColor(self.cv_img_bgr, cv2.COLOR_BGR2HSV)
@@ -233,35 +235,39 @@ class MainWindow(QWidget):
 
         # Apply erosion
         erosion_kernel = np.ones((self.filter4.k, self.filter4.k), np.uint8)
-        self.cv_img_eros = cv2.morphologyEx(cv_img_open, cv2.MORPH_CLOSE, erosion_kernel)
+        cv_img_eros = cv2.morphologyEx(cv_img_open, cv2.MORPH_CLOSE, erosion_kernel)
+
+        # Last image phase
+        self.cv_img_processed_gray = cv_img_eros
 
         # Convert image to RGB
-        self.final_cv_img = cv2.cvtColor(self.cv_img_eros, cv2.COLOR_GRAY2RGB)
+        self.cv_img_processed_rgb = cv2.cvtColor(self.cv_img_processed_gray, cv2.COLOR_GRAY2RGB)
 
         # Updates the processed image frame
-        self.processed_image.updateImage(self.final_cv_img)
+        self.processed_image.updateImage(self.cv_img_processed_rgb)
 
     def calculateOriginal(self):
         # Update original image with the contours
-        self.cv_img_rgb = cv2.cvtColor(self.cv_img_bgr, cv2.COLOR_BGR2RGB)
+
+        self.orig_img_calculated_rgb = self.cv_img_rgb
 
         # Find contours
-        img, contours, hierarchy = cv2.findContours(self.cv_img_eros, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        img, contours, hierarchy = cv2.findContours(self.cv_img_processed_gray, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         # Apply contours
-        cv2.drawContours(self.cv_img_rgb, contours, -1, (0, 0, 255), 1)
+        cv2.drawContours(self.orig_img_calculated_rgb, contours, -1, (0, 0, 255), 1)
 
-        self.original_image.updateImage(self.cv_img_rgb)
+        self.original_image.updateImage(self.orig_img_calculated_rgb)
 
     def setBackground(self):
-        self.script_path = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
-        MainWindow.path = os.path.dirname(self.script_path) + 'default_BG.jpg'
+        script_path = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
+        MainWindow.path = os.path.dirname(script_path) + 'default_BG.jpg'
 
-        self.cv_img_bgr = cv2.imread(self.path)
-        self.cv_img_rgb = cv2.cvtColor(self.cv_img_bgr, cv2.COLOR_BGR2RGB)
+        cv_img_bgr = cv2.imread(self.path)
+        cv_img_rgb = cv2.cvtColor(cv_img_bgr, cv2.COLOR_BGR2RGB)
 
-        self.original_image.updateImage(self.cv_img_rgb)
-        self.processed_image.updateImage(self.cv_img_rgb)
+        self.original_image.updateImage(cv_img_rgb)
+        self.processed_image.updateImage(cv_img_rgb)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
