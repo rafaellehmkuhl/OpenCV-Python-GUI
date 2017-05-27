@@ -136,11 +136,13 @@ class MainWindow(QWidget):
         self.setBackground()
 
         self.createImagesLayout()
+        self.createFiltersLayout()
         self.createButtons()
         self.createMainLayout()
 
     def createNewFilter(self):
         self.filters[0] = Filter('Filtro' + str(Filter.filterCount), 3, 51, 3)
+        self.v_filters_lay.addWidget(self.filters[0])
         print Filter.filterCount
 
     def createImagesLayout(self):
@@ -151,6 +153,14 @@ class MainWindow(QWidget):
         self.h_img_lay.addWidget(self.processed_image)
         self.h_img_lay.addStretch()
 
+    def createFiltersLayout(self):
+        self.v_filters_lay = QVBoxLayout()
+        self.v_filters_lay.addWidget(self.filter1)
+        self.v_filters_lay.addWidget(self.filter2)
+        self.v_filters_lay.addWidget(self.filter3)
+        self.v_filters_lay.addWidget(self.filter4)
+        self.v_filters_lay.addWidget(self.filter5)
+        self.v_filters_lay.addWidget(self.filter6)
 
     def createMainLayout(self):
         # Creates the main layout (vertical)
@@ -158,12 +168,7 @@ class MainWindow(QWidget):
         # Adds the images horizontal layout to the main layout
         self.v_main_lay.addLayout(self.h_img_lay)
         # Adds the sliders and their labels to the bottom of the main layout
-        self.v_main_lay.addWidget(self.filter1)
-        self.v_main_lay.addWidget(self.filter2)
-        self.v_main_lay.addWidget(self.filter3)
-        self.v_main_lay.addWidget(self.filter4)
-        self.v_main_lay.addWidget(self.filter5)
-        self.v_main_lay.addWidget(self.filter6)
+        self.v_main_lay.addLayout(self.v_filters_lay)
         # Adds the buttons horizontal layout to the bottom of the main layout
         self.v_main_lay.addLayout(self.h_btn_lay)
         # Sets the main layout
