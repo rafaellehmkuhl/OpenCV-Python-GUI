@@ -135,7 +135,6 @@ class MainWindow(QWidget):
 
         self.filters[self.filter_count] = Filter('Filtro' + str(self.filter_count) + ': ', 3, 51, 3)
         self.v_filters_lay.addWidget(self.filters[self.filter_count])
-        print self.filter_count
         self.filter_count += 1
 
     def deleteFilter(self):
@@ -149,7 +148,6 @@ class MainWindow(QWidget):
                 QApplication.processEvents()
 
             self.resize(self.minimumSizeHint())
-
 
     def createImagesLayout(self):
         # Horizontal layout for the two images
@@ -246,8 +244,22 @@ class MainWindow(QWidget):
         # Convert image to grayscale
         cv_img_gray = cv2.cvtColor(self.cv_img_bgr, cv2.COLOR_BGR2GRAY)
 
+        cv_before = cv_img_gray
+
+        if self.filter_count > 0:
+            for i in range(0, self.filter_count):
+
+                #Apply filters
+                k = self.filters[i].k
+                kernel = np.ones((k, k), np.uint8)
+                cv_after = cv2.erode(cv_before, kernel, iterations = 1)
+                #ret, cv_after = cv2.threshold(cv_before, 127, 255, cv2.THRESH_BINARY)
+                cv_before = cv_after
+        else:
+            cv_after = cv_before
+
         # Last image phase
-        self.cv_img_processed_gray = cv_img_gray
+        self.cv_img_processed_gray = cv_after
 
         # Convert image to RGB
         self.cv_img_processed_rgb = cv2.cvtColor(self.cv_img_processed_gray, cv2.COLOR_GRAY2RGB)
