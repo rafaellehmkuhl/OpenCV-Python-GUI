@@ -104,7 +104,7 @@ class Filter(QWidget):
 
         self.thresh_sld.setValue(self.k)
         self.k_lbl.setText(str(self.k))
-        self.parent().process_image()
+        self.parent().updateImages()
 
     def resetValue(self):
         # Resets the K value to it's default
@@ -188,7 +188,7 @@ class MainWindow(QWidget):
         cv_img_rgb = cv2.cvtColor(cv_img_bgr, cv2.COLOR_BGR2RGB)
 
         self.original_image.updateImage(cv_img_rgb)
-        self.process_image()
+        self.updateImages()
 
     def save_image(self):
         # Function for saving the processed image
@@ -202,14 +202,18 @@ class MainWindow(QWidget):
         image_path_proc, _ = QFileDialog.getSaveFileName(self, filter=filter)
         cv2.imwrite(image_path_proc, self.final_cv_img)
 
-    def process_image(self):
+    def updateImages(self):
+        self.processImage()
+        self.calculateOriginal()
+
+    def processImage(self):
         # Function that processes the image using the OpenCV methods
 
         # Open the image
-        cv_img_bgr = cv2.imread(self.path)
+        self.cv_img_bgr = cv2.imread(self.path)
 
         # Convert image to HSV
-        cv_img_hsv = cv2.cvtColor(cv_img_bgr, cv2.COLOR_BGR2HSV)
+        cv_img_hsv = cv2.cvtColor(self.cv_img_bgr, cv2.COLOR_BGR2HSV)
 
         # Define range of desired color in HSV
         lower_color = np.array([self.filter1.k - 30, 0, 35])
@@ -218,17 +222,10 @@ class MainWindow(QWidget):
         hsv_mask = cv2.inRange(cv_img_hsv, lower_color, upper_color)
 
         # Convert image to grayscale
-        cv_img_gray = cv2.cvtColor(cv_img_bgr, cv2.COLOR_BGR2GRAY)
+        cv_img_gray = cv2.cvtColor(self.cv_img_bgr, cv2.COLOR_BGR2GRAY)
 
         # Apply blur
         cv_img_blur = cv2.GaussianBlur(hsv_mask, (self.filter2.k, self.filter2.k), 0)
-        #cv_img_blur = cv2.bilateralFilter(cv_img_gray, self.k1, self.k3, self.k3)
-
-        # Apply threshold
-        #cv_img_thr = cv2.adaptiveThreshold(cv_img_blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, self.k2, 2)
-
-        # Inverts black-white
-        #cv_img_invert = cv2.bitwise_not(cv_img_thr)
 
         # Apply Top Hat
         opening_kernel = np.ones((self.filter3.k, self.filter3.k), np.uint8)
@@ -236,20 +233,20 @@ class MainWindow(QWidget):
 
         # Apply erosion
         erosion_kernel = np.ones((self.filter4.k, self.filter4.k), np.uint8)
-        cv_img_eros = cv2.morphologyEx(cv_img_open, cv2.MORPH_CLOSE, erosion_kernel)
+        self.cv_img_eros = cv2.morphologyEx(cv_img_open, cv2.MORPH_CLOSE, erosion_kernel)
 
         # Convert image to RGB
-        self.final_cv_img = cv2.cvtColor(cv_img_eros, cv2.COLOR_GRAY2RGB)
+        self.final_cv_img = cv2.cvtColor(self.cv_img_eros, cv2.COLOR_GRAY2RGB)
 
         # Updates the processed image frame
         self.processed_image.updateImage(self.final_cv_img)
 
-
+    def calculateOriginal(self):
         # Update original image with the contours
-        self.cv_img_rgb = cv2.cvtColor(cv_img_bgr, cv2.COLOR_BGR2RGB)
+        self.cv_img_rgb = cv2.cvtColor(self.cv_img_bgr, cv2.COLOR_BGR2RGB)
 
         # Find contours
-        img, contours, hierarchy = cv2.findContours(cv_img_eros, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        img, contours, hierarchy = cv2.findContours(self.cv_img_eros, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         # Apply contours
         cv2.drawContours(self.cv_img_rgb, contours, -1, (0, 0, 255), 1)
