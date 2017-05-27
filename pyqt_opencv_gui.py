@@ -14,7 +14,7 @@ class Image(QWidget):
     def __init__(self, name):
         super(Image, self).__init__()
 
-        self.setMinimumSize(500,500)
+        self.setFixedSize(500,500)
 
         # Label for the image
         self.name_lbl = QLabel(name)
@@ -72,9 +72,6 @@ class Filter(QWidget):
         # Set default parameters
         self.setParameters(minValue, maxValue)
 
-        # Create delete button
-        self.delete_btn = QPushButton('X')
-
         # Adds the slider and it's label to the layout
         self.createLayout()
 
@@ -96,7 +93,6 @@ class Filter(QWidget):
         self.lay.addWidget(self.name_lbl)
         self.lay.addWidget(self.k_lbl)
         self.lay.addWidget(self.thresh_sld)
-        self.lay.addWidget(self.delete_btn)
 
     def changeValue(self, value):
         # Function for setting the value of k1
@@ -116,20 +112,15 @@ class Filter(QWidget):
 
 class MainWindow(QWidget):
 
+    filter_count = 0
+
     def __init__(self):
         super(MainWindow, self).__init__()
 
         self.initUI()
-        self.filters = [10]
+        self.filters = [None] * 100
 
     def initUI(self):
-
-        self.filter1 = Filter("Hue", 31, 225, 31)
-        self.filter2 = Filter("Gaussian", 3, 51, 3)
-        self.filter3 = Filter("TopHat", 3, 51, 3)
-        self.filter4 = Filter("Erosion", 3, 51, 3)
-        self.filter5 = Filter("ValueMin", 0, 255, 0)
-        self.filter6 = Filter("ValueMax", 0, 255, 0)
 
         self.original_image = Image('Original')
         self.processed_image = Image('Processed')
@@ -141,9 +132,24 @@ class MainWindow(QWidget):
         self.createMainLayout()
 
     def createNewFilter(self):
-        self.filters[0] = Filter('Filtro' + str(Filter.filterCount), 3, 51, 3)
-        self.v_filters_lay.addWidget(self.filters[0])
-        print Filter.filterCount
+
+        self.filters[self.filter_count] = Filter('Filtro' + str(self.filter_count) + ': ', 3, 51, 3)
+        self.v_filters_lay.addWidget(self.filters[self.filter_count])
+        print self.filter_count
+        self.filter_count += 1
+
+    def deleteFilter(self):
+        if self.filter_count > 0:
+            self.filter_count -= 1
+            self.v_filters_lay.removeWidget(self.filters[self.filter_count])
+            self.filters[self.filter_count].deleteLater()
+            self.filters[self.filter_count] = None
+
+            for i in range(0, 10):
+                QApplication.processEvents()
+
+            self.resize(self.minimumSizeHint())
+
 
     def createImagesLayout(self):
         # Horizontal layout for the two images
@@ -155,22 +161,16 @@ class MainWindow(QWidget):
 
     def createFiltersLayout(self):
         self.v_filters_lay = QVBoxLayout()
-        self.v_filters_lay.addWidget(self.filter1)
-        self.v_filters_lay.addWidget(self.filter2)
-        self.v_filters_lay.addWidget(self.filter3)
-        self.v_filters_lay.addWidget(self.filter4)
-        self.v_filters_lay.addWidget(self.filter5)
-        self.v_filters_lay.addWidget(self.filter6)
 
     def createMainLayout(self):
         # Creates the main layout (vertical)
         self.v_main_lay = QVBoxLayout()
         # Adds the images horizontal layout to the main layout
         self.v_main_lay.addLayout(self.h_img_lay)
-        # Adds the sliders and their labels to the bottom of the main layout
-        self.v_main_lay.addLayout(self.v_filters_lay)
         # Adds the buttons horizontal layout to the bottom of the main layout
         self.v_main_lay.addLayout(self.h_btn_lay)
+        # Adds the sliders and their labels to the bottom of the main layout
+        self.v_main_lay.addLayout(self.v_filters_lay)
         # Sets the main layout
         self.setLayout(self.v_main_lay)
 
@@ -185,18 +185,23 @@ class MainWindow(QWidget):
         self.add_filter_btn = QPushButton('Add filter')
         self.add_filter_btn.clicked.connect(self.createNewFilter)
 
+        # Create delete button
+        self.delete_filter_btn = QPushButton('Delete last filter')
+        self.delete_filter_btn.clicked.connect(self.deleteFilter)
+
         # Button for selecting image
-        self.select_image_btn = QPushButton('Select image')
+        self.select_image_btn = QPushButton('Open image')
         self.select_image_btn.clicked.connect(self.openImage)
 
         # Button for cleaning image
-        self.clean_image_btn = QPushButton('Save image')
+        self.clean_image_btn = QPushButton('Save images')
         self.clean_image_btn.clicked.connect(self.saveImages)
 
         # Horizontal layout for the buttons
         self.h_btn_lay = QHBoxLayout()
         self.h_btn_lay.addStretch(1)
         self.h_btn_lay.addWidget(self.add_filter_btn)
+        self.h_btn_lay.addWidget(self.delete_filter_btn)
         self.h_btn_lay.addWidget(self.select_image_btn)
         self.h_btn_lay.addWidget(self.clean_image_btn)
         self.h_btn_lay.addStretch(1)
@@ -238,31 +243,11 @@ class MainWindow(QWidget):
         self.cv_img_bgr = cv2.imread(self.path)
         self.cv_img_rgb = cv2.cvtColor(self.cv_img_bgr, cv2.COLOR_BGR2RGB)
 
-        # Convert image to HSV
-        cv_img_hsv = cv2.cvtColor(self.cv_img_bgr, cv2.COLOR_BGR2HSV)
-
-        # Define range of desired color in HSV
-        lower_color = np.array([self.filter1.k - 30, 0, self.filter5.k])
-        upper_color = np.array([self.filter1.k + 30, 255, self.filter6.k])
-
-        hsv_mask = cv2.inRange(cv_img_hsv, lower_color, upper_color)
-
         # Convert image to grayscale
         cv_img_gray = cv2.cvtColor(self.cv_img_bgr, cv2.COLOR_BGR2GRAY)
 
-        # Apply blur
-        cv_img_blur = cv2.GaussianBlur(hsv_mask, (self.filter2.k, self.filter2.k), 0)
-
-        # Apply Top Hat
-        opening_kernel = np.ones((self.filter3.k, self.filter3.k), np.uint8)
-        cv_img_open = cv2.morphologyEx(cv_img_blur, cv2.MORPH_TOPHAT, opening_kernel)
-
-        # Apply erosion
-        erosion_kernel = np.ones((self.filter4.k, self.filter4.k), np.uint8)
-        cv_img_eros = cv2.morphologyEx(cv_img_open, cv2.MORPH_OPEN, erosion_kernel)
-
         # Last image phase
-        self.cv_img_processed_gray = cv_img_eros
+        self.cv_img_processed_gray = cv_img_gray
 
         # Convert image to RGB
         self.cv_img_processed_rgb = cv2.cvtColor(self.cv_img_processed_gray, cv2.COLOR_GRAY2RGB)
