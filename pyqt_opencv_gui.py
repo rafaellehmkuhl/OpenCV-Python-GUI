@@ -24,28 +24,13 @@ class Image(QWidget):
         self.frame_lbl.setMinimumSize(400,400)
         self.frame_lbl.setScaledContents(False)
 
-        self.setBackground()
-        self.addToLayout()
+        self.createLayout()
 
-    def addToLayout(self):
+    def createLayout(self):
         self.v_lay = QVBoxLayout()
 
         self.v_lay.addWidget(self.name_lbl)
         self.v_lay.addWidget(self.frame_lbl)
-
-
-    def setBackground(self):
-        self.script_path = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
-        MainWindow.path = os.path.dirname(self.script_path) + 'default_BG.jpg'
-
-        cv_img_bgr = cv2.imread(MainWindow.path)
-        cv_img_rgb = cv2.cvtColor(cv_img_bgr, cv2.COLOR_BGR2RGB)
-
-        height, width, channel = cv_img_rgb.shape
-        bytesPerLine = 3 * width
-        img_rgb = QImage(cv_img_rgb.data, width, height, bytesPerLine, QImage.Format_RGB888)
-
-        self.frame_lbl.setPixmap(QPixmap.fromImage(img_rgb))
 
 class Filter(QWidget):
     """Common base class for all filters"""
@@ -131,6 +116,7 @@ class MainWindow(QWidget):
 
         self.original_image = Image('Original')
         self.processed_image = Image('Processed')
+        self.setBackground()
 
         # Horizontal layout for the two images
         self.h_img_lay = QHBoxLayout()
@@ -138,7 +124,6 @@ class MainWindow(QWidget):
         self.h_img_lay.addWidget(self.original_image)
         self.h_img_lay.addWidget(self.processed_image)
         self.h_img_lay.addStretch()
-
 
         self.createButtons()
 
@@ -268,6 +253,20 @@ class MainWindow(QWidget):
         qt_img_rgb = QImage(self.cv_img_rgb.data, width, height, bytesPerLine, QImage.Format_RGB888)
 
         self.original_image.frame_lbl.setPixmap(QPixmap.fromImage(qt_img_rgb))
+
+    def setBackground(self):
+        self.script_path = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
+        MainWindow.path = os.path.dirname(self.script_path) + 'default_BG.jpg'
+
+        self.cv_img_bgr = cv2.imread(self.path)
+        self.cv_img_rgb = cv2.cvtColor(self.cv_img_bgr, cv2.COLOR_BGR2RGB)
+
+        height, width, channel = self.cv_img_rgb.shape
+        bytesPerLine = 3 * width
+        self.img_rgb = QImage(self.cv_img_rgb.data, width, height, bytesPerLine, QImage.Format_RGB888)
+
+        self.original_image.frame_lbl.setPixmap(QPixmap.fromImage(self.img_rgb))
+        self.processed_image.frame_lbl.setPixmap(QPixmap.fromImage(self.img_rgb))
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
