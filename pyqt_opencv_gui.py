@@ -72,6 +72,9 @@ class Filter(QWidget):
         # Set default parameters
         self.setParameters(minValue, maxValue)
 
+        # Create delete button
+        self.delete_btn = QPushButton('X')
+
         # Adds the slider and it's label to the layout
         self.createLayout()
 
@@ -93,6 +96,7 @@ class Filter(QWidget):
         self.lay.addWidget(self.name_lbl)
         self.lay.addWidget(self.k_lbl)
         self.lay.addWidget(self.thresh_sld)
+        self.lay.addWidget(self.delete_btn)
 
     def changeValue(self, value):
         # Function for setting the value of k1
@@ -116,13 +120,16 @@ class MainWindow(QWidget):
         super(MainWindow, self).__init__()
 
         self.initUI()
+        self.filters = [10]
 
     def initUI(self):
 
-        self.filter1 = Filter("HSV", 30, 225, 30)
+        self.filter1 = Filter("Hue", 31, 225, 31)
         self.filter2 = Filter("Gaussian", 3, 51, 3)
-        self.filter3 = Filter("Opening", 3, 51, 3)
+        self.filter3 = Filter("TopHat", 3, 51, 3)
         self.filter4 = Filter("Erosion", 3, 51, 3)
+        self.filter5 = Filter("ValueMin", 0, 255, 0)
+        self.filter6 = Filter("ValueMax", 0, 255, 0)
 
         self.original_image = Image('Original')
         self.processed_image = Image('Processed')
@@ -131,6 +138,10 @@ class MainWindow(QWidget):
         self.createImagesLayout()
         self.createButtons()
         self.createMainLayout()
+
+    def createNewFilter(self):
+        self.filters[0] = Filter('Filtro' + str(Filter.filterCount), 3, 51, 3)
+        print Filter.filterCount
 
     def createImagesLayout(self):
         # Horizontal layout for the two images
@@ -151,17 +162,24 @@ class MainWindow(QWidget):
         self.v_main_lay.addWidget(self.filter2)
         self.v_main_lay.addWidget(self.filter3)
         self.v_main_lay.addWidget(self.filter4)
+        self.v_main_lay.addWidget(self.filter5)
+        self.v_main_lay.addWidget(self.filter6)
         # Adds the buttons horizontal layout to the bottom of the main layout
         self.v_main_lay.addLayout(self.h_btn_lay)
         # Sets the main layout
         self.setLayout(self.v_main_lay)
 
         # Sets the geometry, position, window title and window default mode
-        self.setGeometry(500, 150, 0, 0)
+        self.setGeometry(500, 100, 0, 0)
         self.setWindowTitle('Image processing')
         self.show()
 
     def createButtons(self):
+
+        # Button for adding filters
+        self.add_filter_btn = QPushButton('Add filter')
+        self.add_filter_btn.clicked.connect(self.createNewFilter)
+
         # Button for selecting image
         self.select_image_btn = QPushButton('Select image')
         self.select_image_btn.clicked.connect(self.openImage)
@@ -173,6 +191,7 @@ class MainWindow(QWidget):
         # Horizontal layout for the buttons
         self.h_btn_lay = QHBoxLayout()
         self.h_btn_lay.addStretch(1)
+        self.h_btn_lay.addWidget(self.add_filter_btn)
         self.h_btn_lay.addWidget(self.select_image_btn)
         self.h_btn_lay.addWidget(self.clean_image_btn)
         self.h_btn_lay.addStretch(1)
@@ -218,8 +237,8 @@ class MainWindow(QWidget):
         cv_img_hsv = cv2.cvtColor(self.cv_img_bgr, cv2.COLOR_BGR2HSV)
 
         # Define range of desired color in HSV
-        lower_color = np.array([self.filter1.k - 30, 0, 35])
-        upper_color = np.array([self.filter1.k + 30, 255, 200])
+        lower_color = np.array([self.filter1.k - 30, 0, self.filter5.k])
+        upper_color = np.array([self.filter1.k + 30, 255, self.filter6.k])
 
         hsv_mask = cv2.inRange(cv_img_hsv, lower_color, upper_color)
 
@@ -235,7 +254,7 @@ class MainWindow(QWidget):
 
         # Apply erosion
         erosion_kernel = np.ones((self.filter4.k, self.filter4.k), np.uint8)
-        cv_img_eros = cv2.morphologyEx(cv_img_open, cv2.MORPH_CLOSE, erosion_kernel)
+        cv_img_eros = cv2.morphologyEx(cv_img_open, cv2.MORPH_OPEN, erosion_kernel)
 
         # Last image phase
         self.cv_img_processed_gray = cv_img_eros
@@ -252,10 +271,10 @@ class MainWindow(QWidget):
         self.orig_img_calculated_rgb = self.cv_img_rgb
 
         # Find contours
-        img, contours, hierarchy = cv2.findContours(self.cv_img_processed_gray, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        img, contours, hierarchy = cv2.findContours(self.cv_img_processed_gray, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
         # Apply contours
-        cv2.drawContours(self.orig_img_calculated_rgb, contours, -1, (0, 0, 255), 1)
+        cv2.drawContours(self.orig_img_calculated_rgb, contours, -1, (0, 0, 255), 3)
 
         self.original_image.updateImage(self.orig_img_calculated_rgb)
 
