@@ -50,10 +50,9 @@ class Filter(QWidget):
     def __init__(self, name, minValue, maxValue, init, parent=None):
         super(Filter, self).__init__(parent=parent)
 
+        self.filter_number = Filter.filterCount
         self.setMaximumHeight(65)
-
         self.k = init
-
         self.name = name
 
         # Increase the number of filters created
@@ -61,18 +60,18 @@ class Filter(QWidget):
 
         # Variable for the slider/label layout
         self.lay = QHBoxLayout(self)
-
         # Variable for the constant of the OpenCV filter
         self.k = self.defaultK
-
         # Label for the slider
         self.k_lbl = QLabel(str(self.k))
-
         # Name for the slider
         self.name_lbl = QLabel(self.name + ': ')
-
         # Set default parameters
         self.setParameters(minValue, maxValue)
+
+        # Create delete button
+        self.delete_filter_btn = QPushButton('X')
+        self.delete_filter_btn.clicked.connect(self.deleteFilter)
 
         # Adds the slider and it's label to the layout
         self.createLayout()
@@ -95,6 +94,7 @@ class Filter(QWidget):
         self.lay.addWidget(self.name_lbl)
         self.lay.addWidget(self.k_lbl)
         self.lay.addWidget(self.thresh_sld)
+        self.lay.addWidget(self.delete_filter_btn)
 
     def changeValue(self, value):
         # Function for setting the value of k1
@@ -112,6 +112,9 @@ class Filter(QWidget):
         # Resets the K value to it's default
         self.changeValue(self.defaultK)
 
+    def deleteFilter(self):
+        self.parent().deleteFilter(self.filter_number)
+
 class MainWindow(QWidget):
 
     filter_count = 0
@@ -120,7 +123,7 @@ class MainWindow(QWidget):
         super(MainWindow, self).__init__()
 
         self.initUI()
-        self.filters = [None] * 100
+        self.filters = []
 
     def initUI(self):
 
@@ -135,20 +138,24 @@ class MainWindow(QWidget):
 
     def createNewFilter(self):
 
-        self.filters[self.filter_count] = Filter(self.filter_select.currentText(), 3, 51, 3)
+        self.filters.append(Filter(self.filter_select.currentText(), 3, 51, 3))
         self.v_filters_lay.addWidget(self.filters[self.filter_count])
+        print self.filters[self.filter_count].filter_number
         self.filter_count += 1
 
-    def deleteFilter(self):
+    def deleteFilter(self, filter_number):
         if self.filter_count > 0:
+            to_delete = None
+            for i, filter_del in enumerate(self.filters):
+                if filter_del.filter_number == filter_number:
+                    item_to_delete = self.v_filters_lay.takeAt(i)
+                    item_to_delete.widget().deleteLater()
+                    to_delete = i
+            del self.filters[to_delete]
             self.filter_count -= 1
-            self.v_filters_lay.removeWidget(self.filters[self.filter_count])
-            self.filters[self.filter_count].deleteLater()
-            self.filters[self.filter_count] = None
 
             for i in range(0, 10):
                 QApplication.processEvents()
-
             self.resize(self.minimumSizeHint())
 
     def createImagesLayout(self):
@@ -189,10 +196,6 @@ class MainWindow(QWidget):
         self.add_filter_btn = QPushButton('Add filter')
         self.add_filter_btn.clicked.connect(self.createNewFilter)
 
-        # Create delete button
-        self.delete_filter_btn = QPushButton('Delete last filter')
-        self.delete_filter_btn.clicked.connect(self.deleteFilter)
-
         # Button for selecting image
         self.select_image_btn = QPushButton('Open image')
         self.select_image_btn.clicked.connect(self.openImage)
@@ -206,7 +209,6 @@ class MainWindow(QWidget):
         self.h_btn_lay.addStretch(1)
         self.h_btn_lay.addWidget(self.filter_select)
         self.h_btn_lay.addWidget(self.add_filter_btn)
-        self.h_btn_lay.addWidget(self.delete_filter_btn)
         self.h_btn_lay.addWidget(self.select_image_btn)
         self.h_btn_lay.addWidget(self.clean_image_btn)
         self.h_btn_lay.addStretch(1)
