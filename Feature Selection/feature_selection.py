@@ -20,13 +20,13 @@ def drawRectangle(event, x, y, flags, param):
         drawing = False
         fx, fy = x, y
 
-img = cv2.imread('berry.jpg')
+img = cv2.imread('bolt.jpg')
 cv2.namedWindow('image')
 cv2.setMouseCallback('image', drawRectangle)
 
 while 1:
     if drawing:
-        img = cv2.imread('berry.jpg')
+        img = cv2.imread('bolt.jpg')
         cv2.rectangle(img, (ix, iy), (fx, fy), (255, 0, 0), 2)
     cv2.imshow('image', img)
 

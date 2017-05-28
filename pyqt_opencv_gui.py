@@ -8,21 +8,23 @@ from PyQt5.QtWidgets import (QWidget, QLabel, QHBoxLayout, QVBoxLayout,
                              QApplication, QPushButton, QSlider,
                              QFileDialog, QComboBox)
 
+
 class Image(QWidget):
     """Common base for the images"""
 
     def __init__(self, name):
         super(Image, self).__init__()
 
-        self.setFixedSize(500,500)
+        self.setFixedSize(500, 500)
 
         # Label for the image
         self.name_lbl = QLabel(name)
 
-        # Label (frame) where the original image will be located, with true scaling and maximum size
+        # Label (frame) where the original image will be located, with true
+        # scaling and maximum size
         self.frame_lbl = QLabel(self)
-        self.frame_lbl.setMinimumSize(400,400)
-        self.frame_lbl.setScaledContents(False)
+        self.frame_lbl.setMinimumSize(400, 400)
+        self.frame_lbl.setScaledContents(True)
 
         self.createLayout()
 
@@ -38,9 +40,11 @@ class Image(QWidget):
 
         height, width, channel = self.cv_img_rgb.shape
         bytesPerLine = 3 * width
-        self.q_image = QImage(self.cv_img_rgb.data, width, height, bytesPerLine, QImage.Format_RGB888)
+        self.q_image = QImage(self.cv_img_rgb.data, width,
+                              height, bytesPerLine, QImage.Format_RGB888)
 
         self.frame_lbl.setPixmap(QPixmap.fromImage(self.q_image))
+
 
 class Filter(QWidget):
     """Common base class for all filters"""
@@ -80,7 +84,8 @@ class Filter(QWidget):
         self.thresh_sld.valueChanged.connect(self.changeValue)
 
     def setParameters(self, minValue, maxValue):
-        # Creates the slider for the OpenCV filter, with min, max, default and step values
+        # Creates the slider for the OpenCV filter, with min, max, default and
+        # step values
         self.thresh_sld = QSlider(Qt.Horizontal, self)
         self.thresh_sld.setFocusPolicy(Qt.NoFocus)
         self.thresh_sld.setMinimum(minValue)
@@ -115,6 +120,7 @@ class Filter(QWidget):
     def deleteFilter(self):
         self.parent().deleteFilter(self.filter_number)
 
+
 class MainWindow(QWidget):
 
     filter_count = 0
@@ -137,11 +143,70 @@ class MainWindow(QWidget):
         self.createMainLayout()
 
     def createNewFilter(self):
+        name = self.filter_select.currentText()
 
-        self.filters.append(Filter(self.filter_select.currentText(), 3, 51, 3))
+        if name == 'Threshold':
+            min_value = 3
+            max_value = 255
+            init_value = 3
+        if name == 'Gaussian Threshold':
+            min_value = 31
+            max_value = 255
+            init_value = 3
+        if name == 'HSV':
+            min_value = 30
+            max_value = 225
+            init_value = 30
+        if name == 'LAB':
+            min_value = 3
+            max_value = 255
+            init_value = 3
+        if name == 'Erosion':
+            min_value = 3
+            max_value = 101
+            init_value = 3
+        if name == 'Dilation':
+            min_value = 3
+            max_value = 101
+            init_value = 3
+        if name == 'Opening':
+            min_value = 3
+            max_value = 101
+            init_value = 3
+        if name == 'Closing':
+            min_value = 3
+            max_value = 101
+            init_value = 3
+        if name == 'Top Hat':
+            min_value = 3
+            max_value = 101
+            init_value = 3
+        if name == 'Black Hat':
+            min_value = 3
+            max_value = 101
+            init_value = 3
+        if name == 'Histogram Equalization':
+            min_value = 3
+            max_value = 255
+            init_value = 3
+        if name == 'Invert':
+            min_value = 3
+            max_value = 255
+            init_value = 3
+        if name == 'Canny':
+            min_value = 3
+            max_value = 255
+            init_value = 3
+        if name == 'Laplacian':
+            min_value = 3
+            max_value = 255
+            init_value = 3
+
+        self.filters.append(Filter(name, min_value, max_value, init_value))
         self.v_filters_lay.addWidget(self.filters[self.filter_count])
-        print self.filters[self.filter_count].filter_number
         self.filter_count += 1
+
+        self.updateImages()
 
     def deleteFilter(self, filter_number):
         if self.filter_count > 0:
@@ -157,6 +222,7 @@ class MainWindow(QWidget):
             for i in range(0, 10):
                 QApplication.processEvents()
             self.resize(self.minimumSizeHint())
+            self.updateImages()
 
     def createImagesLayout(self):
         # Horizontal layout for the two images
@@ -190,7 +256,10 @@ class MainWindow(QWidget):
 
         # ComboBox for filter selection
         self.filter_select = QComboBox()
-        self.filter_select.addItems(['Threshold', 'Erosion', 'Dilation'])
+        self.filter_select.addItems(['Threshold', 'Gaussian Threshold', 'HSV', 'LAB',
+                                     'Erosion', 'Dilation', 'Opening', 'Closing',
+                                     'Top Hat', 'Black Hat', 'Histogram Equalization',
+                                     'Invert', 'Canny', 'Laplacian'])
 
         # Button for adding filters
         self.add_filter_btn = QPushButton('Add filter')
@@ -217,7 +286,8 @@ class MainWindow(QWidget):
         # Function for selecting the original image
 
         filter = "Images (*.png *.jpg)"
-        image_path, _ = QFileDialog.getOpenFileName(self, 'Open image', 'Desktop', filter)
+        image_path, _ = QFileDialog.getOpenFileName(
+            self, 'Open image', 'Desktop', filter)
         self.path = image_path
 
         cv_img_bgr = cv2.imread(self.path)
@@ -232,11 +302,13 @@ class MainWindow(QWidget):
         filter = "Images (*.png *.jpg)"
 
         image_path_orig, _ = QFileDialog.getSaveFileName(self, filter=filter)
-        self.cv_img_processed_bgr = cv2.cvtColor(self.cv_img_processed_rgb, cv2.COLOR_RGB2BGR)
+        self.cv_img_processed_bgr = cv2.cvtColor(
+            self.cv_img_processed_rgb, cv2.COLOR_RGB2BGR)
         cv2.imwrite(image_path_orig, self.cv_img_processed_bgr)
 
         image_path_proc, _ = QFileDialog.getSaveFileName(self, filter=filter)
-        self.orig_img_calculated_bgr = cv2.cvtColor(self.orig_img_calculated_rgb, cv2.COLOR_RGB2BGR)
+        self.orig_img_calculated_bgr = cv2.cvtColor(
+            self.orig_img_calculated_rgb, cv2.COLOR_RGB2BGR)
         cv2.imwrite(image_path_proc, self.orig_img_calculated_bgr)
 
     def updateImages(self):
@@ -250,36 +322,81 @@ class MainWindow(QWidget):
         self.cv_img_bgr = cv2.imread(self.path)
         self.cv_img_rgb = cv2.cvtColor(self.cv_img_bgr, cv2.COLOR_BGR2RGB)
 
-        # Convert image to grayscale
-        cv_img_gray = cv2.cvtColor(self.cv_img_bgr, cv2.COLOR_BGR2GRAY)
-
-        cv_before = cv_img_gray
+        cv_before = self.cv_img_rgb
 
         if self.filter_count > 0:
             for i in range(0, self.filter_count):
 
-                #Apply filters
+                # Apply filters
                 k = self.filters[i].k
                 name = self.filters[i].name
                 kernel = np.ones((k, k), np.uint8)
 
-                if(name == 'Threshold'):
-                    ret, cv_after = cv2.threshold(cv_before, k, 255, cv2.THRESH_BINARY)
-                if(name == 'Erosion'):
-                    cv_after = cv2.erode(cv_before, kernel, iterations = 1)
-                if(name == 'Dilation'):
-                    cv_after = cv2.dilate(cv_before, kernel, iterations = 1)
+                if name == 'Invert':
+                    cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
+                    cv_after = cv2.bitwise_not(cv_before)
+                if name == 'Histogram Equalization':
+                    cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
+                    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+                    cv_after = clahe.apply(cv_before)
+                if name == 'Threshold':
+                    cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
+                    ret, cv_after = cv2.threshold(
+                        cv_before, k, 255, cv2.THRESH_BINARY)
+                if name == 'Gaussian Threshold':
+                    cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
+                    cv_after = cv2.adaptiveThreshold(cv_before, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                                     cv2.THRESH_BINARY, k, 2)
+                if name == 'HSV':
+                    cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2HSV)
+                    lower_color = np.array([k - 35, 0, 0])
+                    upper_color = np.array([k + 35, 255, 255])
+                    cv_after = cv2.inRange(cv_before, lower_color, upper_color)
+                if name == 'LAB':
+                    cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2LAB)
+                    L, a, b = cv2.split(cv_before)
+                    ret, cv_after = cv2.threshold(L, k, 255, cv2.THRESH_BINARY)
+                if name == 'Erosion':
+                    cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
+                    cv_after = cv2.erode(cv_before, kernel, iterations=1)
+                if name == 'Dilation':
+                    cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
+                    cv_after = cv2.dilate(cv_before, kernel, iterations=1)
+                if name == 'Opening':
+                    cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
+                    cv_after = cv2.morphologyEx(
+                        cv_before, cv2.MORPH_OPEN, kernel)
+                if name == 'Closing':
+                    cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
+                    cv_after = cv2.morphologyEx(
+                        cv_before, cv2.MORPH_CLOSE, kernel)
+                if name == 'Top Hat':
+                    cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
+                    cv_after = cv2.morphologyEx(
+                        cv_before, cv2.MORPH_TOPHAT, kernel)
+                if name == 'Black Hat':
+                    cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
+                    cv_after = cv2.morphologyEx(
+                        cv_before, cv2.MORPH_BLACKHAT, kernel)
+                if name == 'Canny':
+                    cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
+                    cv_after = cv2.Canny(cv_before, 100, k)
+                if name == 'Laplacian':
+                    cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
+                    cv_after = cv2.Laplacian(cv_before, cv2.CV_64F)
+                    cv_after = np.absolute(cv_after)
+                    cv_after = np.uint8(cv_after)
 
-
-                cv_before = cv_after
+                cv_before = cv2.cvtColor(cv_after, cv2.COLOR_GRAY2RGB)
         else:
-            cv_after = cv_before
+            cv_after = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
 
         # Last image phase
         self.cv_img_processed_gray = cv_after
 
         # Convert image to RGB
-        self.cv_img_processed_rgb = cv2.cvtColor(self.cv_img_processed_gray, cv2.COLOR_GRAY2RGB)
+        self.cv_img_processed_rgb = cv2.cvtColor(
+            self.cv_img_processed_gray, cv2.COLOR_GRAY2RGB)
 
         # Updates the processed image frame
         self.processed_image.updateImage(self.cv_img_processed_rgb)
@@ -290,15 +407,21 @@ class MainWindow(QWidget):
         self.orig_img_calculated_rgb = self.cv_img_rgb
 
         # Find contours
-        img, contours, hierarchy = cv2.findContours(self.cv_img_processed_gray, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+        contours, hierarchy = cv2.findContours(
+            self.cv_img_processed_gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        #epsilon = 0.1 * cv2.arcLength(contours, True)
+        #aprox_contours = cv2.approxPolyDP(contours, epsilon, True)
 
         # Apply contours
-        cv2.drawContours(self.orig_img_calculated_rgb, contours, -1, (0, 0, 255), 3)
+        cv2.drawContours(self.orig_img_calculated_rgb,
+                         contours, -1, (0, 0, 255), 3)
 
         self.original_image.updateImage(self.orig_img_calculated_rgb)
 
     def setBackground(self):
-        script_path = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
+        script_path = os.path.basename(
+            os.path.dirname(os.path.realpath(__file__)))
         MainWindow.path = os.path.dirname(script_path) + 'default_BG.jpg'
 
         cv_img_bgr = cv2.imread(self.path)
