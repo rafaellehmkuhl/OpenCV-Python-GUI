@@ -1,13 +1,10 @@
-from PyQt5.QtWidgets import (QMainWindow, QFileDialog, QApplication)
-from PyQt5 import QtGui
-import cv2
-import numpy as np
-import sys
-import os
-import FeatureSelectorProject.FeatureSelector.gui as gui
+from PyQt5.QtWidgets import (QMainWindow, QApplication)
+
+import FeatureSelectorProject.FeatureSelectorApp.ui.gui as gui
+
 #import FeatureSelection
 
-QApplication.setApplicationName('FeatureSelector')
+QApplication.setApplicationName('FeatureSelectorApp')
 QApplication.setApplicationVersion('0.1')
 
 Ui_MainWindow = gui.Ui_MainWindow
