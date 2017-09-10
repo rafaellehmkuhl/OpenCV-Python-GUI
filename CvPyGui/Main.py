@@ -1,11 +1,10 @@
-import numpy as np
 import cv2
-import os
+import numpy as np
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QFileDialog)
 
-import gui
-import ImageCvQtContainer
-import FilterCvQtContainer
+from CvPyGui import FilterCvQtContainer
+from CvPyGui import ImageCvQtContainer
+from CvPyGui.ui import gui
 
 Ui_MainWindow = gui.Ui_MainWindow
 
