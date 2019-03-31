@@ -1,8 +1,6 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QWidget, QLabel, QHBoxLayout,
                              QPushButton, QSlider)
-import cv2
-import numpy as np
 
 
 class Filter(QWidget):
@@ -72,7 +70,7 @@ class Filter(QWidget):
 
         self.thresh_sld.setValue(self.k[0])
         self.k_lbl[0].setText(str(self.k[0]))
-        self.parent().parent().updateImages()
+        self.process()
 
     def resetValue(self):
         # Resets the K value to it's default
@@ -81,64 +79,14 @@ class Filter(QWidget):
     def deleteFilter(self):
         self.parent().parent().deleteFilter(self.filter_number)
 
-    def process(self, cv_before, name):
+    def process(self):
 
         k = self.k[0]
-        kernel = np.ones((k, k), np.uint8)
 
-        if name == 'Invert':
-            cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
-            cv_after = cv2.bitwise_not(cv_before)
-        elif name == 'Histogram Equalization':
-            cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
-            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-            cv_after = clahe.apply(cv_before)
-        elif name == 'Threshold':
-            cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
-            ret, cv_after = cv2.threshold(
-                cv_before, k, 255, cv2.THRESH_BINARY)
-        elif name == 'Gaussian Threshold':
-            cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
-            cv_after = cv2.adaptiveThreshold(cv_before, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                             cv2.THRESH_BINARY, k, 2)
-        elif name == 'HSV':
-            cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2HSV)
-            lower_color = np.array([k - 35, 0, 0])
-            upper_color = np.array([k + 35, 255, 255])
-            cv_after = cv2.inRange(cv_before, lower_color, upper_color)
-        elif name == 'LAB':
-            cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2LAB)
-            L, a, b = cv2.split(cv_before)
-            ret, cv_after = cv2.threshold(L, k, 255, cv2.THRESH_BINARY)
-        elif name == 'Erosion':
-            cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
-            cv_after = cv2.erode(cv_before, kernel, iterations=1)
-        elif name == 'Dilation':
-            cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
-            cv_after = cv2.dilate(cv_before, kernel, iterations=1)
-        elif name == 'Opening':
-            cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
-            cv_after = cv2.morphologyEx(
-                cv_before, cv2.MORPH_OPEN, kernel)
-        elif name == 'Closing':
-            cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
-            cv_after = cv2.morphologyEx(
-                cv_before, cv2.MORPH_CLOSE, kernel)
-        elif name == 'Top Hat':
-            cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
-            cv_after = cv2.morphologyEx(
-                cv_before, cv2.MORPH_TOPHAT, kernel)
-        elif name == 'Black Hat':
-            cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
-            cv_after = cv2.morphologyEx(
-                cv_before, cv2.MORPH_BLACKHAT, kernel)
-        elif name == 'Canny':
-            cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
-            cv_after = cv2.Canny(cv_before, 100, k)
-        elif name == 'Laplacian':
-            cv_before = cv2.cvtColor(cv_before, cv2.COLOR_RGB2GRAY)
-            cv_after = cv2.Laplacian(cv_before, cv2.CV_64F)
-            cv_after = np.absolute(cv_after)
-            cv_after = np.uint8(cv_after)
-
-        return cv_after
+        if self.name == 'Moving Average':
+            self.filtered_df = self.parent().variable_df.rolling(window=int(k), center=True).median().fillna(method='ffill').fillna(method='bfill')
+            self.parent().variable_df = self.filtered_df
+            self.parent().updatePlot()
+        elif self.name == 'Set maximum':
+            pass
+        return
